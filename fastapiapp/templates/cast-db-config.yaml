@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.castDb.configMapName }}
+  namespace: default  # Modifiez si un namespace dynamique est requis
+data:
+  POSTGRES_USER_CAST: {{ .Values.castDb.postgresUser | quote }}
+  POSTGRES_PASSWORD_CAST: {{ .Values.castDb.postgresPassword | quote }}
+  POSTGRES_DB_CAST: {{ .Values.castDb.postgresDb | quote }}

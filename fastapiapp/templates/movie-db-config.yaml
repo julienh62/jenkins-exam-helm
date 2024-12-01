@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.movieDb.configMapName }}
+  namespace: default  # Modifiez si un namespace dynamique est requis
+data:
+  POSTGRES_USER_CAST: {{ .Values.movieDb.postgresUser | quote }}
+  POSTGRES_PASSWORD_CAST: {{ .Values.movieDb.postgresPassword | quote }}
+  POSTGRES_DB_CAST: {{ .Values.movieDb.postgresDb | quote }}

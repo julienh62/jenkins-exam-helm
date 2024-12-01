@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.movieService.ingressName }}  # Utilisation de la valeur dynamique de `values.yaml`
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: {{ .Values.movieService.ingressHost }}  # Utilisation du host dynamique de `values.yaml`
+    http:
+      paths:
+      - path: {{ .Values.movieService.ingressPath }}  # Utilisation du path dynamique de `values.yaml`
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.movieService.serviceName }}  # Nom du service dynamique de `values.yaml`
+            port:
+              number: {{ .Values.movieService.servicePort }}  # Port du service dynamique

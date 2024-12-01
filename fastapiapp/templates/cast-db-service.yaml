@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.castDb.serviceName }}
+  namespace: default
+  labels:
+    app: {{ .Values.castDb.appLabel }}
+spec:
+  selector:
+    app: {{ .Values.castDb.appLabel }}  # Le label du pod cast-db
+  ports:
+    - port: {{ .Values.castDb.servicePort }}  # Le port exposé par le service
+      targetPort: {{ .Values.castDb.targetPort }}  # Le port sur lequel le pod écoute
+  type: {{ .Values.castDb.serviceType }}  # Le type du service (par exemple ClusterIP)

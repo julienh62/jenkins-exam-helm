@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.castService.serviceName }}
+  labels:
+    app: {{ .Values.castService.appLabel }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.castService.appLabel }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.castService.appLabel }}
+    spec:
+      containers:
+      - name: {{ .Values.castService.serviceName }}
+        image: {{ .Values.castService.image }}
+        ports:
+        - containerPort: {{ .Values.castService.servicePort }}
+        env:
+        - name: DATABASE_URI_CAST
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.castService.configMapName }}
+              key: DATABASE_URI_CAST

@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.castService.ingressName }}  # Utilisation de la valeur dynamique de `values.yaml`
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: {{ .Values.castService.ingressHost }}  # Utilisation du host dynamique de `values.yaml`
+    http:
+      paths:
+      - path: {{ .Values.castService.ingressPath }}  # Utilisation du path dynamique de `values.yaml`
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.castService.serviceName }}  # Nom du service dynamique de `values.yaml`
+            port:
+              number: {{ .Values.castService.servicePort }}  # Port du service dynamique

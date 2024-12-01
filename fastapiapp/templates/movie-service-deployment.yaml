@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.movieService.serviceName }}
+  labels:
+    app: {{ .Values.movieService.appLabel }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.movieService.appLabel }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.movieService.appLabel }}
+    spec:
+      containers:
+      - name: {{ .Values.movieService.serviceName }}
+        image: {{ .Values.movieService.image }}
+        ports:
+        - containerPort: {{ .Values.movieService.servicePort }}
+        env:
+        - name: DATABASE_URI_MOVIE
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.movieService.configMapName }}
+              key: DATABASE_URI_MOVIE

@@ -1,0 +1,491 @@
+---
+# Source: fastapiapp/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fastapiapp
+  labels:
+    helm.sh/chart: fastapiapp-0.1.0
+    app.kubernetes.io/name: fastapiapp
+    app.kubernetes.io/instance: fastapiapp
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+automountServiceAccountToken: true
+---
+# Source: fastapiapp/templates/cast-db-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cast-db-config
+  namespace: default  # Modifiez si un namespace dynamique est requis
+data:
+  POSTGRES_USER_CAST: "cast_db_username"
+  POSTGRES_PASSWORD_CAST: "cast_db_password"
+  POSTGRES_DB_CAST: "cast_db_dev"
+---
+# Source: fastapiapp/templates/cast-service-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cast-service-config
+data:
+  DATABASE_URI_CAST: "postgresql://cast_db_username:cast_db_password@cast-db/cast_db_dev"
+  CAST_SERVICE_HOST_URL: "http://cast-service:8000/"  # Utilisation d'une URL dynamique
+---
+# Source: fastapiapp/templates/movie-db-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: movie-db-config
+  namespace: default  # Modifiez si un namespace dynamique est requis
+data:
+  POSTGRES_USER_CAST: "movie_db_username"
+  POSTGRES_PASSWORD_CAST: "movie_db_password"
+  POSTGRES_DB_CAST: "movie_db_dev"
+---
+# Source: fastapiapp/templates/movie-service-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: movie-service-config
+  namespace: default
+data:
+  DATABASE_URI_MOVIE: "postgresql://movie_db_username:movie_db_password@movie-db/movie_db_dev"
+  MOVIE_SERVICE_HOST_URL: "http://movie-service:8000/"  # URL dynamique
+---
+# Source: fastapiapp/templates/nginx-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "nginx-config"
+# Pas besoin de spécifier 'namespace' ici, Kubernetes utilisera 'default' par défaut
+data:
+  nginx.conf: |
+    server {
+        listen 8081;
+
+        location /api/v1/movies/docs {
+            proxy_pass http://movie-service:8000/; 
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location /api/v1/casts/docs {
+            proxy_pass http://cast-service:8000/;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
+---
+# Source: fastapiapp/templates/cast-db-volumes.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cast-db-pvc  # Dynamique via values.yaml
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi  # Dynamique via values.yaml
+---
+# Source: fastapiapp/templates/movie-db-volumes.yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: movie-db-pvc  # Dynamique via values.yaml
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi  # Dynamique via values.yaml
+---
+# Source: fastapiapp/templates/cast-db-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cast-db
+  namespace: default
+  labels:
+    app: cast-db
+spec:
+  selector:
+    app: cast-db  # Le label du pod cast-db
+  ports:
+    - port: 5432  # Le port exposé par le service
+      targetPort: 5432  # Le port sur lequel le pod écoute
+  type: ClusterIP  # Le type du service (par exemple ClusterIP)
+---
+# Source: fastapiapp/templates/cast-service-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: cast-service
+spec:
+  selector:
+    app: cast-service
+  ports:
+  - protocol: TCP
+    port: 8000  # Port externe exposé à l'extérieur du cluster
+    targetPort: 8000  # Port interne dans le conteneur
+  type: ClusterIP
+---
+# Source: fastapiapp/templates/movie-db-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: movie-db
+  namespace: default
+spec:
+  selector:
+    app: movie-db  # Le label du pod correspondant
+  ports:
+    - port: 5432  # Le port exposé par le service
+      targetPort: 5432  # Le port sur lequel le pod écoute
+  type: ClusterIP  # Type du service, dynamique via values.yaml
+---
+# Source: fastapiapp/templates/movie-service-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: movie-service
+spec:
+  selector:
+    app: movie-service
+  ports:
+  - protocol: TCP
+    port: 8000  # Port externe exposé à l'extérieur du cluster
+    targetPort: 8000  # Port interne dans le conteneur
+  type: ClusterIP
+---
+# Source: fastapiapp/templates/nginx-service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx  # Nom dynamique
+spec:
+  selector:
+    app: nginx    # Label dynamique pour associer au déploiement
+  ports:
+  - protocol: TCP
+    port: 8081  # Port externe dynamique
+    targetPort: 8081  # Port interne dynamique
+  type: NodePort    # Type de service dynamique
+---
+# Source: fastapiapp/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: fastapiapp
+  labels:
+    helm.sh/chart: fastapiapp-0.1.0
+    app.kubernetes.io/name: fastapiapp
+    app.kubernetes.io/instance: fastapiapp
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8083              # Port exposé par le service (externe)
+      targetPort: 8083   # Port cible dans le conteneur (interne)
+      protocol: TCP
+      name: http
+  selector:
+    app.kubernetes.io/name: fastapiapp
+    app.kubernetes.io/instance: fastapiapp
+---
+# Source: fastapiapp/templates/cast-db-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cast-db
+  labels:
+    app: cast-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cast-db
+  template:
+    metadata:
+      labels:
+        app: cast-db
+    spec:
+      containers:
+      - name: cast-db
+        image: postgres:12.1-alpine
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: cast-db-data
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: cast-db-config
+              key: POSTGRES_USER_CAST
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: cast-db-config
+              key: POSTGRES_PASSWORD_CAST
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: cast-db-config
+              key: POSTGRES_DB_CAST
+      volumes:
+      - name: cast-db-data
+        persistentVolumeClaim:
+          claimName: cast-db-pvc
+---
+# Source: fastapiapp/templates/cast-service-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cast-service
+  labels:
+    app: cast-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cast-service
+  template:
+    metadata:
+      labels:
+        app: cast-service
+    spec:
+      containers:
+      - name: cast-service
+        image: julh62/jenkins-devops-exams-cast-service:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URI_CAST
+          valueFrom:
+            configMapKeyRef:
+              name: cast-service-config
+              key: DATABASE_URI_CAST
+---
+# Source: fastapiapp/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fastapiapp
+  labels:
+    helm.sh/chart: fastapiapp-0.1.0
+    app.kubernetes.io/name: fastapiapp
+    app.kubernetes.io/instance: fastapiapp
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fastapiapp
+      app.kubernetes.io/instance: fastapiapp
+  template:
+    metadata:
+      labels:
+        helm.sh/chart: fastapiapp-0.1.0
+        app.kubernetes.io/name: fastapiapp
+        app.kubernetes.io/instance: fastapiapp
+        app.kubernetes.io/version: "1.16.0"
+        app.kubernetes.io/managed-by: Helm
+    spec:
+      serviceAccountName: fastapiapp
+      securityContext:
+        {}
+      containers:
+        - name: fastapiapp
+          securityContext:
+            {}
+          image: "nginx:1.16.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8083  
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {}
+---
+# Source: fastapiapp/templates/movie-db-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movie-db
+  labels:
+    app: movie-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: movie-db
+  template:
+    metadata:
+      labels:
+        app: movie-db
+    spec:
+      containers:
+      - name: movie-db
+        image: postgres:12.1-alpine
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: movie-db-data
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: movie-db-config
+              key: POSTGRES_USER_MOVIE
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: movie-db-config
+              key: POSTGRES_PASSWORD_MOVIE
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: movie-db-config
+              key: POSTGRES_DB_MOVIE
+      volumes:
+      - name: movie-db-data
+        persistentVolumeClaim:
+          claimName: movie-db-pvc
+---
+# Source: fastapiapp/templates/movie-service-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movie-service
+  labels:
+    app: movie-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: movie-service
+  template:
+    metadata:
+      labels:
+        app: movie-service
+    spec:
+      containers:
+      - name: movie-service
+        image: julh62/jenkins-devops-exams-movie-service:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URI_MOVIE
+          valueFrom:
+            configMapKeyRef:
+              name: movie-service-config
+              key: DATABASE_URI_MOVIE
+---
+# Source: fastapiapp/templates/nginx-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx  # Dynamique, récupère le nom du déploiement depuis values.yaml
+  labels:
+    app: nginx        # Dynamique, récupère le label de l'app depuis values.yaml
+spec:
+  replicas: 1     # Dynamique, récupère le nombre de répliques depuis values.yaml
+  selector:
+    matchLabels:
+      app: nginx      # Dynamique, label utilisé pour le sélecteur
+  template:
+    metadata:
+      labels:
+        app: nginx    # Dynamique, label de l'application
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest     # Dynamique, récupère l'image Docker depuis values.yaml
+        ports:
+        - containerPort: 8081  # Dynamique, port interne du conteneur
+        volumeMounts:
+        - mountPath: /etc/nginx/conf.d
+          name: nginx-config
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config  # Dynamique, nom du ConfigMap monté comme volume
+---
+# Source: fastapiapp/templates/cast-service-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cast-service-ingress  # Utilisation de la valeur dynamique de `values.yaml`
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: jhennebo.be  # Utilisation du host dynamique de `values.yaml`
+    http:
+      paths:
+      - path: /api/v1/casts/  # Utilisation du path dynamique de `values.yaml`
+        pathType: Prefix
+        backend:
+          service:
+            name: cast-service  # Nom du service dynamique de `values.yaml`
+            port:
+              number: 8000  # Port du service dynamique
+---
+# Source: fastapiapp/templates/movie-service-ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: movie-service-ingress  # Utilisation de la valeur dynamique de `values.yaml`
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: jhennebo.be  # Utilisation du host dynamique de `values.yaml`
+    http:
+      paths:
+      - path: /api/v1/movies/  # Utilisation du path dynamique de `values.yaml`
+        pathType: Prefix
+        backend:
+          service:
+            name: movie-service  # Nom du service dynamique de `values.yaml`
+            port:
+              number: 8000  # Port du service dynamique
+---
+# Source: fastapiapp/templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "fastapiapp-test-connection"
+  labels:
+    helm.sh/chart: fastapiapp-0.1.0
+    app.kubernetes.io/name: fastapiapp
+    app.kubernetes.io/instance: fastapiapp
+    app.kubernetes.io/version: "1.16.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['fastapiapp:80']
+  restartPolicy: Never

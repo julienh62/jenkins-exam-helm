@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.movieService.configMapName }}
+  namespace: default
+data:
+  DATABASE_URI_MOVIE: "postgresql://{{ .Values.movieService.postgresUser }}:{{ .Values.movieService.postgresPassword }}@{{ .Values.movieService.dbHost }}/{{ .Values.movieService.postgresDb }}"
+  MOVIE_SERVICE_HOST_URL: "{{ .Values.movieService.serviceHostUrl }}"  # URL dynamique

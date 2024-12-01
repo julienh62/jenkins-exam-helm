@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.movieDb.serviceName }}
+  namespace: default
+spec:
+  selector:
+    app: {{ .Values.movieDb.appLabel }}  # Le label du pod correspondant
+  ports:
+    - port: {{ .Values.movieDb.servicePort }}  # Le port exposé par le service
+      targetPort: {{ .Values.movieDb.targetPort }}  # Le port sur lequel le pod écoute
+  type: {{ .Values.movieDb.serviceType }}  # Type du service, dynamique via values.yaml

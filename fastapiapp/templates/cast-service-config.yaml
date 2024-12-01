@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.castService.configMapName }}
+data:
+  DATABASE_URI_CAST: "postgresql://{{ .Values.castService.postgresUser }}:{{ .Values.castService.postgresPassword }}@{{ .Values.castService.dbHost }}/{{ .Values.castService.postgresDb }}"
+  CAST_SERVICE_HOST_URL: "{{ .Values.castService.serviceHostUrl }}"  # Utilisation d'une URL dynamique

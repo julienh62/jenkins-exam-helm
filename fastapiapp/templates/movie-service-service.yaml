@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.movieService.serviceName }}
+spec:
+  selector:
+    app: {{ .Values.movieService.appLabel }}
+  ports:
+  - protocol: TCP
+    port: {{ .Values.movieService.servicePort }}  # Port externe exposé à l'extérieur du cluster
+    targetPort: {{ .Values.movieService.containerPort }}  # Port interne dans le conteneur
+  type: ClusterIP

@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.movieDb.deploymentName }}
+  labels:
+    app: {{ .Values.movieDb.appLabel }}
+spec:
+  replicas: {{ .Values.movieDb.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.movieDb.appLabel }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.movieDb.appLabel }}
+    spec:
+      containers:
+      - name: {{ .Values.movieDb.containerName }}
+        image: {{ .Values.movieDb.image }}
+        ports:
+        - containerPort: {{ .Values.movieDb.containerPort }}
+        volumeMounts:
+        - mountPath: {{ .Values.movieDb.volumeMountPath }}
+          name: {{ .Values.movieDb.volumeName }}
+        env:
+        - name: POSTGRES_USER
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.movieDb.configMapName }}
+              key: POSTGRES_USER_MOVIE
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.movieDb.configMapName }}
+              key: POSTGRES_PASSWORD_MOVIE
+        - name: POSTGRES_DB
+          valueFrom:
+            configMapKeyRef:
+              name: {{ .Values.movieDb.configMapName }}
+              key: POSTGRES_DB_MOVIE
+      volumes:
+      - name: {{ .Values.movieDb.volumeName }}
+        persistentVolumeClaim:
+          claimName: {{ .Values.movieDb.persistentVolumeClaim }}

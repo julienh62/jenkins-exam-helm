@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.nginx.deploymentName }}  # Dynamique, récupère le nom du déploiement depuis values.yaml
+  labels:
+    app: {{ .Values.nginx.appLabel }}        # Dynamique, récupère le label de l'app depuis values.yaml
+spec:
+  replicas: {{ .Values.nginx.replicas }}     # Dynamique, récupère le nombre de répliques depuis values.yaml
+  selector:
+    matchLabels:
+      app: {{ .Values.nginx.appLabel }}      # Dynamique, label utilisé pour le sélecteur
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.nginx.appLabel }}    # Dynamique, label de l'application
+    spec:
+      containers:
+      - name: nginx
+        image: {{ .Values.nginx.image }}     # Dynamique, récupère l'image Docker depuis values.yaml
+        ports:
+        - containerPort: {{ .Values.nginx.containerPort }}  # Dynamique, port interne du conteneur
+        volumeMounts:
+        - mountPath: /etc/nginx/conf.d
+          name: nginx-config
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: {{ .Values.nginx.configMapName }}  # Dynamique, nom du ConfigMap monté comme volume
