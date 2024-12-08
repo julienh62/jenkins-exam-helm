@@ -71,6 +71,13 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO cast_db_username;
 pousser l'image sur dockerhub
 ou bien pull l'image si elle est deja sur dockerhub 
 
+#nettoyer avant de redeployer
+
+kubectl apply -f "./*.yaml"
+kubectl delete -f "./*.yaml"
+
+
+
 # meme exercice en utulisant kubernetes
 #creer les fichiers .yaml de deployment de de service
 # crée un ConfigMap nommé nginx-config, dans lequel nginx-config.conf est une clé, et le contenu du fichier est sa valeur.
@@ -175,8 +182,16 @@ http://jhennebo.be/api/v1/casts/docs
    chmod 700 get_helm.sh
    ./get_helm.sh
 
-    Créer les fichiers de configuration (facultatif) :
-        Modifiez fastapiapp/values.yaml pour personnaliser les paramètres du déploiement.
+helm create fastapiapp
+Cela générera la structure nécessaire à une charte Helm dans le répertoire myhe>
+
+fastapiapp/
+├── Chart.yaml       # Métadonnées sur la charte (nom, version, description)
+├── values.yaml      # Valeurs par défaut pour les paramètres de la charte
+├── templates/       # Fichiers YAML pour vos ressources Kubernetes
+│   ├── deployment.yaml
+│   ├── service.yaml
+
 
     Déployer sur Kubernetes :
 
@@ -267,7 +282,18 @@ helm template fastapiapp . -f values.yaml > output.yaml
 pour verifier les yaml reellement crées 
 helm list
 pour voir si il y a deja une version du depoiement de helm
-helm uninstall fastapiapp
+
+  Déployer sur Kubernetes :
+
+helm install fastapiapp ./fastapiapp
+
+Mettre à jour le déploiement si nécessaire :
+
+helm upgrade fastapiapp ./fastapiapp
+
+Supprimer le déploiement :
+
+    helm uninstall fastapiapp
 
 helm install fastapiapp . -f values.yaml
 Obtenez le nom du pod qui a été déployé avec le label fastapiapp
